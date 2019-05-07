@@ -1,9 +1,4 @@
-'''
-Created on 2015. 5. 25.
 
-@author: JPHONG
-'''
-"""I/O Multiplexing echo server"""
 import socket
 import select
 

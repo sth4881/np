@@ -1,41 +1,23 @@
-import random
+def msgs(n, length=1000):
+    """Generate n messages of length ending with new line char
+    """
 
-def msgs(n, max_length = 1000):
-    """Generate n messages of length <= max_length"""
-
-    contents = max_length * b'a'
-    r = random.Random(113)
+    msg = bytearray(b'00000' + (length-6) * b'a' + b'\n')
 
     for i in range(1, n+1):
-        length = r.randint(1, max_length-4)
-        msg = b'%4.4d %s\n' %(i, contents[:length])
+        msg[:5] = b'%5.5d' % i
         yield msg
 
-class Msgs:
-    """Iterator implementation"""
+def report(n_sent, n_rcvd):
+    """Print report on sent/received msgs
+    """
 
-    def __init__(self, n, max_length=1000):
-        """Generate n messages of length <= max_length"""
-        self.n = n
-        self.i = 0
-        self.max_length = max_length
-        self.contents = max_length * b'a'
-        self.r = random.Random(113)
+    delta = len(n_sent) - len(n_rcvd)
+    if delta > 0:
+        n_rcvd.extend([0 for i in range(delta)])
+    elif delta < 0:
+        n_sent.extend([0 for i in range(-delta)])
+    for e in enumerate(zip(n_sent, n_rcvd)):
+        print(e)
+    print('total', (sum(n_sent), sum(n_rcvd)))
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.i > self.n:
-            raise StopIteration
-        self.i += 1
-        length = self.r.randint(1, self.max_length - 4)
-        msg = b'%4.4d %s\n' %(self.i, self.contents[:length])
-        return msg
-
-if __name__ == '__main__':
-    for msg in msgs(5):
-        print(msg)
-    print()
-    for msg in Msgs(5):
-        print(msg)

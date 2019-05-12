@@ -27,12 +27,12 @@ def server(my_port):
                         print('Client closing', addr)
                         s.close()
                         read_socks.remove(s)
-                except socket.error as e:
+                except OSError as e:
                     print('socket error:', e)
                     s.close()
                     read_socks.remove(s)
 
 if __name__ == '__main__':
-    server(50007)
+    server(10007)
 
     

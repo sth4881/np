@@ -2,7 +2,9 @@ import socket, sys
 import msg
 
 class Client:
-    """Class implentation
+    """Class implementation
+    outgoing: socket
+    incoming: file-like object (buffering)
     """
     def __init__(self, server_addr):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -13,9 +15,9 @@ class Client:
         self.recv_bytes = []
 
     def run(self):
-        for message in msg.msgs(20, length=2000):
-            self.sock.sendall(message)
-            self.sent_bytes.append(len(message))
+        for message in msg.msgs(20, length=2000, delay=0.5):
+            n_sent = self.sock.send(message)
+            self.sent_bytes.append(n_sent)
             data = self.in_file.readline() # receive response
             if not data:
                 print('Server closing')
@@ -26,12 +28,13 @@ class Client:
 
 if __name__ == '__main__':
     # command line processing
-    serv_addr = ('np.hufs.ac.kr', 7)    # default server_addr
     if len(sys.argv) == 3:
-        serv_addr = sys.argv[1], sys.argv[2]
-    elif len(sys.argv) != 1:
+        serv_addr = sys.argv[1], int(sys.argv[2])
+    elif len(sys.argv) == 1:
+        serv_addr = ('np.hufs.ac.kr', 7)    # default server_addr
+    else:
         print('Usage: {} [host port]', sys.argv[0])
-        sys.exit(1)
+        sys.exit(1)                         # exit with error
 
     cli = Client(serv_addr)
     cli.run()

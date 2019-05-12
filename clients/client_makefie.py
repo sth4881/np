@@ -2,8 +2,9 @@ import socket
 import msg
 
 def client(server_addr):
-    """Client - using file-like object instead of socket obj
-    Constraints: request and response messages should end with LF
+    """Client - converting to file-like object to allow buffered I/O
+
+    Assumption: request/response messages ending with LF
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(server_addr)       # connect to server process

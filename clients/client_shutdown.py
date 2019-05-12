@@ -1,12 +1,8 @@
-"""
-Request를 다 보냈어도 남은 response를 받아야 한다
-"""
-
 import socket
 import msg
 
 def client(server_addr):
-    """Client - with shutdown and receiving more
+    """Client - read more date after shut-down
     """
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -27,7 +23,7 @@ def client(server_addr):
         sock.shutdown(socket.SHUT_WR) # send eof mark (FIN)
         # Receive more for the remaining messages
         while True:
-            data = sock.recv(3000)
+            data = sock.recv(2048)
             if not data:
                 break
             recv_bytes.append(len(data))

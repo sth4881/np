@@ -1,13 +1,13 @@
 
 """
-보내는 만큼 받는 것은 아니다!!
+보낸 만큼 서버가 받는 것은 아니다!!
 """
 
 import socket
 import msg
 
 def client(server_addr):
-    """Client - all the responses might not be received
+    """Incorrect client
     """
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -16,7 +16,7 @@ def client(server_addr):
     sent_bytes = []
     recv_bytes = []
     for message in msg.msgs(20, length=2000):  # generate 20 msgs
-        n_sent = sock.send(message)          # send message to server
+        n_sent = sock.send(message) # send message to server
         sent_bytes.append(n_sent)
         data = sock.recv(2048)      # receive response from server
         recv_bytes.append(len(data))

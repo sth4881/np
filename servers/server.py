@@ -50,7 +50,6 @@ class ThreadingTCPServer:
         sock.listen(5)
         self.sock = sock
         self.HandlerClass = HandlerClass
-        self._threads = []
 
     def serve_forever(self):
         logging.info('Server started')
@@ -61,18 +60,11 @@ class ThreadingTCPServer:
                 t = threading.Thread(target=self.process_request,
                                      args=(request, client_address))
                 # t.setDaemon(True)  # as daemon thread
-                self._threads.append(t)
                 t.start()
         except Exception as e:
             logging.exception('Exception at listening:'.format(e))
         finally:
             self.sock.close()
-            # Wait for terminating threads
-            threads = self._threads
-            self._threads = []
-            if threads:
-                for t in threads:
-                    t.join()
 
     def process_request(self, request, client_address):
         """Start a new thread to process the request"""

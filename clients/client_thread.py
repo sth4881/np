@@ -14,7 +14,7 @@ def recv_loop(sock):
         recv_bytes.append(len(data))
 
 def client(server_addr):
-    """Client implementation by the sending and receiving threads
+    """Client - sending and receiving threads
     """
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

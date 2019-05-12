@@ -1,4 +1,6 @@
-import sys
+"""Serve only one client at a time
+"""
+
 from socket import socket, AF_INET, SOCK_STREAM
 
 def echo_server(my_port):   

@@ -1,8 +1,8 @@
-import socket, sys
+import socket
 import msg
 
 class Client:
-    """Class implementation
+    """Client - OOP
     outgoing: socket
     incoming: file-like object (buffering)
     """
@@ -27,14 +27,5 @@ class Client:
         msg.report(self.sent_bytes, self.recv_bytes)
 
 if __name__ == '__main__':
-    # command line processing
-    if len(sys.argv) == 3:
-        serv_addr = sys.argv[1], int(sys.argv[2])
-    elif len(sys.argv) == 1:
-        serv_addr = ('np.hufs.ac.kr', 7)    # default server_addr
-    else:
-        print('Usage: {} [host port]', sys.argv[0])
-        sys.exit(1)                         # exit with error
-
-    cli = Client(serv_addr)
+    cli = Client(('np.hufs.ac.kr', 7))
     cli.run()

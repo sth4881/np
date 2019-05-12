@@ -31,9 +31,11 @@ class Client(threading.Thread):
         self.sock.close()                       # to send eof to server
 
 if __name__ == '__main__':
-    serv_addr = ('localhost', 10007)
     # serv_addr = ('np.hufs.ac.kr', 7)
-    n_clients = int(sys.argv[1]) if len(sys.argv) == 2 else 3
+    serv_addr = ('localhost', 10007)
+    n_clients = 3
+    if len(sys.argv) == 2:
+        n_clients = int(sys.argv[1])
 
     # create and start n client thread objects
     threads = []
@@ -41,8 +43,6 @@ if __name__ == '__main__':
         cli = Client(serv_addr)
         cli.start()
         threads.append(cli)
-
-    print("Threads running:", threads)
 
     # Wait for terminating child threads
     for t in threads:

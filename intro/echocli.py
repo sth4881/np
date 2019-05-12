@@ -15,6 +15,6 @@ def echo_client(server_addr):
     sock.close()                # send FIN(no more data) and close the socket
     
 if __name__ == '__main__':
-    echo_client(('localhost', 50007))
-    # echo_client(('np.hufs.ac.kr', 7))
+    # echo_client(('localhost', 10007))
+    echo_client(('np.hufs.ac.kr', 7))
 

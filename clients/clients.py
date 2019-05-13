@@ -31,16 +31,23 @@ class Client(threading.Thread):
         self.sock.close()                       # to send eof to server
 
 if __name__ == '__main__':
-    # serv_addr = ('np.hufs.ac.kr', 7)
-    serv_addr = ('localhost', 10007)
+    usage = 'Usage: clients.py host:port [n]'
     n_clients = 3
-    if len(sys.argv) == 2:
-        n_clients = int(sys.argv[1])
-
+    try:
+        if len(sys.argv) in (2, 3):
+            host, port = sys.argv[1].split(':')
+            port = int(port)
+            if len(sys.argv) == 3:
+                n_clients = int(sys.argv[2])
+        else:
+            print(usage)
+    except Exception as e:
+        print(usage)
+        raise
     # create and start n client thread objects
     threads = []
     for i in range(n_clients):
-        cli = Client(serv_addr)
+        cli = Client((host, port))
         cli.start()
         threads.append(cli)
 

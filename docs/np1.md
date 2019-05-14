@@ -102,7 +102,7 @@ Close the socket:
 s.close()
 ```
 
-### Identify a Processes on Internet
+### Identify a Process on Internet
 A process on the Internet is identified by (*host*, *port*)
 - Host(machine) by 32-bit IP address
   - dotted decimal notation: `'203.253.70.32'`

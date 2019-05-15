@@ -1,7 +1,7 @@
 import socket
 import threading, logging
 
-# logging.basicConfig(filename='', level=logging.DEBUG)
+# logging.basicConfig(filename='', level=logging.INFO, format='(%asctime)s:%(threadName)s: %(message)s')
 logging.basicConfig(level=logging.DEBUG, format='%(threadName)s: %(message)s')
 
 def echo_handler(conn, cli_addr):
@@ -35,6 +35,8 @@ def echo_server(my_port):
             handler.start()
     except Exception as e:
         logging.exception('Exception at listening:'.format(e))
+        sock.close()
+        raise
     finally:
         sock.close()
 

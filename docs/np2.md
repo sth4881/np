@@ -50,7 +50,7 @@ Q: Report를 보라. Sent bytes와 received bytes가 다른가? 총 sent bytes�
   - Server process가 비정상 종료(exception이 발생했거나 kill 당해서)  
   - Server가 설치된 컴퓨터가 shutdown 중 (OS bug, 정전 또는 운영자에 의해)
   
->참고: main을 call하는 보이지 않는 code가 여러분의 프로그램에 들어 있다. 즉, mother function이 있다. 이것이 OS로 부터 control을 받아 main을 call한다. main에서 `return` 또는 `exit`하면 mother function으로 돌아와 close하지 않은 file이나 socket들을 칮이`close`해 준다. Process가 kill 당할 때도 미친가지이다. (Programming language에 무관하게) 
+>참고: main을 call하는 보이지 않는 code가 여러분의 프로그램에 들어 있다. 즉, mother function이 있다. 이것이 OS로 부터 control을 받아 main을 call한다. main에서 `return` 또는 `exit`하면 mother function으로 돌아와 close하지 않은 file이나 socket들을 찾아 `close`해 준다. Process가 kill 당할 때도 미친가지이다. (Programming language에 무관하게) 
 
 > 따라서, 프로그램이 정상 종료될 때에 명시적으로 `close`하지 않아도 자동적으로 `close`된다.
 

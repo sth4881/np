@@ -7,7 +7,7 @@ class EchoRequestHandler(socketserver.StreamRequestHandler):
             if not line:       # eof when the socket closed
                 break
             self.wfile.write(line)         # send a reply to the client
-            # self.wfile.flush()      # flush out the buffer. Send immediately
+            self.wfile.flush()      # flush out the buffer. Send immediately
 
 
 server = socketserver.ThreadingTCPServer(('', 10007), EchoRequestHandler)

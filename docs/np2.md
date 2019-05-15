@@ -1,5 +1,5 @@
 
-# Network Programming, Part 2
+# Network Programming, Part 2: Clients
 
 ## Getting started with echo client and server
 Echo service(well-known port 7)는 client가 보낸 메시지를 그대로 회신하는 sevice다. Client가 connection을 connection 종료를 요청할 때 까지 연결이 지속된다.

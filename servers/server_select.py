@@ -24,6 +24,7 @@ def echo_server(my_port):
     """Echo Server - I/O multiplexing"""
 
     sock = socket(AF_INET, SOCK_STREAM)
+    sock.setblocking(False)
     sock.bind(('', my_port))
     sock.listen(5)
     sel.register(sock, selectors.EVENT_READ, accept)

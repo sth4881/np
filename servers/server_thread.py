@@ -1,7 +1,7 @@
 import socket
 import threading, logging
 
-# logging.basicConfig(filename='', level=logging.INFO, format='(%asctime)s:%(threadName)s: %(message)s')
+# logging.basicConfig(filename='', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(threadName)s:%(message)s')
 logging.basicConfig(level=logging.DEBUG, format='%(threadName)s: %(message)s')
 
 def echo_handler(conn, cli_addr):
@@ -31,7 +31,7 @@ def echo_server(my_port):
                                         # conn: new socket, addr: client addr
             logging.info('Connection from {}'.format(cli_addr))
             handler = threading.Thread(target=echo_handler, args=(conn, cli_addr))
-            handler.setDaemon(True)   # daemonize this thread. i.e not to wait.
+            handler.setDaemon(True)   # daemonize this thread. i.e not to wait child thread
             handler.start()
     except Exception as e:
         logging.exception('Exception at listening:'.format(e))

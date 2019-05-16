@@ -14,8 +14,8 @@ def client(server_addr):
         n_sent = sock.send(message)          # send message to server
         sent_bytes.append(n_sent)
         data = sock.recv(2048)      # receive response from server
-        if not data:                # check if server terminates abormally
-            print('Server closing')
+        if not data:                # check if server terminates abnormally
+            print('Server abnormally terminated')
             break
         recv_bytes.append(len(data))
     else:

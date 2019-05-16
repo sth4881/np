@@ -14,6 +14,7 @@ def echo_server(my_port):
     while True:                     # do forever (until process killed)
         conn, cli_addr = sock.accept()  # wait for next client connect
                                     # conn: new socket, addr: client addr
+        print(conn)
         print('Connection from', cli_addr)
         while True:
             data = conn.recv(1024)  # recv next message on connected socket
@@ -22,7 +23,7 @@ def echo_server(my_port):
             print(data.decode(), end='')
             conn.send(data)         # send a reply to the client
         print('Client closed', cli_addr)
-        conn.close()                # close the connected socket
+        conn.close()               # close the connected socket
         
 if __name__ == '__main__':
     echo_server(10007)

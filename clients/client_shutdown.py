@@ -18,14 +18,15 @@ def client(server_addr):
             print('Server closing')
             break
         recv_bytes.append(len(data))
-    # Now all the messages sent. Terminate outgoing TCP connection.
-    sock.shutdown(socket.SHUT_WR) # send eof mark (FIN)
-    # Receive more for the remaining messages
-    while True:
-        data = sock.recv(2048)
-        if not data:
-            break
-        recv_bytes.append(len(data))
+    else:
+        # Now all the messages sent. Terminate outgoing TCP connection.
+        sock.shutdown(socket.SHUT_WR) # send eof mark (FIN)
+        # Receive more for the remaining messages
+        while True:
+            data = sock.recv(2048)
+            if not data:
+                break
+            recv_bytes.append(len(data))
     sock.close()
     msg.report(sent_bytes, recv_bytes)
 

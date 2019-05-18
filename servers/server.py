@@ -1,8 +1,9 @@
 import socket
 import threading, logging, selectors
 
-# logging.basicConfig(level=logging.DEBUG, format='%(threadName)s: %(message)s')
-logging.basicConfig(format='%(threadName)s: %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(threadName)s: %(message)s')
+# default log level
+# logging.basicConfig(format=logging.WARNING'%(threadName)s: %(message)s')
 
 class RequestHandler:
     def __init__(self, request, client_address, server):

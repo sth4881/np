@@ -27,3 +27,11 @@ def report(n_sent, n_rcvd):
         print(e)
     print('total', (sum(n_sent), sum(n_rcvd)))
 
+if __name__ == '__main__':
+    # Can be used as iterable objects with next()
+    it = iter(msgs(20, length=2000))
+    while True:
+        try:
+            print(next(it))
+        except StopIteration:
+            break

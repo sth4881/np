@@ -27,7 +27,7 @@ Daemon process라 함은 그 컴퓨터의 user가 없고 terminal도 없다. std
 ## I/O Multiplexing server
 Socket들을 non-blocking mode로 동작하도록 한다. `accept/send/recv`등 blocked 될 수 있는 operation에 대해서 block되지 않는다. 
 
-I/O multiplexing 대상이 되는 socket과 event 유형(readable/writeable)은 `register` method로 등록한다. 
+I/O multiplexing 대상이 되는 socket과 event 유형(readable/writeable)은 `register` method로 등록한다. `data`를 등록하면 event가 발생했을 때 등록한 data가 무엇이지 access 가능하다. 보통 call-back 함수를 등록한다.
 ```Python
 sel.register(fileobj, events, data=send_recv)
 ```
@@ -41,7 +41,7 @@ events = sel.select(timeout=None)   # wait for events
 
 `select`가 return하는 events는 (key, mask) tuple들의 list이다. 그 이전에 timeout이 발생했다면 empty list.
 발생한 event의 종류는 bit mask로 표현된다. 
-key의 attribute들(`fileobj`, `events`, `data`)에서 `register`한 파라미터들을 알 수 있다.
+key의 attribute들(`fileobj`, `events`, `data`)에서 `register`한 파라미터들을 access할 수 있다.
 
 ### servers/server_select.py
 `register` method의 parameter `data`에 function을 패스함으로써 event가 발생하면 부를 call-back function을 등록한 것이다. listening socket에 대해서는 `accept`, connected socket에 대해서는 수신한 데이터를 그대로 회신하는 `echo` 함수를 정의했다.
@@ -49,8 +49,7 @@ key의 attribute들(`fileobj`, `events`, `data`)에서 `register`한 파라미�
 ## Multi-threading server
 Client와 connection이 성립되면 이 client와의 데이터 교환을 책임질 function을 target으로 하는 thread를 start시킨다. 
 
-
-```python
+```Python
 while True:
     conn, cli_addr = sock.accept()  # wait for next client connect
     handler = threading.Thread(target=echo_handler, args=(conn, cli_addr))

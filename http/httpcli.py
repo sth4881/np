@@ -10,13 +10,12 @@ class Response:
         self.status_code = None
         self.content = bytearray()
         self.headers = CaseInsensitiveDict()
-        self.encoding = 'UTF-8'  # default
-
+        self.request = None
 
 class Request:
     template = '{method} {path} HTTP/1.1\r\n{headers}\r\n'
 
-    def __init__(self, url, data=None, headers={}):
+    def __init__(self, url, data=None, headers=None):
         self.method = 'POST' if data else 'GET'
         self.full_url = url
         self.data = data
@@ -32,8 +31,9 @@ class Request:
         self.headers['Agent'] = 'httpopen'
         self.headers['Accept'] = '*/*'
         self.headers['Connection'] = 'close'
-        for key, value in headers.items():
-            self.headers[key] = value
+        if headers:
+            for key, value in headers.items():
+                self.headers[key] = value
         if self.data:
             if not self.headers.get('content-type', None):
                 raise ValueError('No Content-type header specified')
@@ -44,7 +44,14 @@ class Request:
         self.message = self.template.format(method=self.method, path=self.path, headers=headers_str)
 
 
-def httpopen(url, data=None):
+def httpopen(url, data=None, headers=None):
+    """Send an HTTP request and receive its response.
+
+    :param url: URL for the new :class: Request object
+    :param data: data to send in the body of the Request
+    :param headers: dict type for setting headers
+    """
+
     def read_headers(file, headers):
         for line in file:
             if line == b'\r\n':  # end of headers
@@ -53,10 +60,7 @@ def httpopen(url, data=None):
             key, value = header.split(':', maxsplit=1)
             headers[key] = value.strip()
 
-    if isinstance(url, Request):
-        request = url
-    elif isinstance(url, str):
-        request = Request(url, data)
+    request = Request(url, data, headers)
     r = urlparse(request.full_url)
     if r.scheme != 'http':
         raise NotImplementedError('{}: not implemented'.format(r.scheme))
@@ -72,6 +76,7 @@ def httpopen(url, data=None):
         sock.sendall(request.data)
 
     response = Response()
+    response.request = request
     # read status line
     response.status_code = int(rfile.readline().decode('utf-8').split()[1])
     logging.debug('status code: {}'.format(response.status_code))
@@ -105,23 +110,24 @@ def httpopen(url, data=None):
     sock.close()
     return response
 
-# GET method - chunked transfer
-url = 'http://mclab.hufs.ac.kr/wiki/Lectures/IA/2019#Python_Network_Programming'
-response = httpopen(url)
-print('content:')
-print(response.content[:400])
+if __name__ == '__main__':
+    # GET method - chunked transfer
+    url = 'http://mclab.hufs.ac.kr/wiki/Lectures/IA/2019#Python_Network_Programming'
+    response = httpopen(url)
+    print('content:')
+    print(response.content[:400])
 
-# Test POST method with JSON data
-import json
-url = 'http://httpbin.org/post'     # simple HTTP Request & Response Service.
-conditions =  {"con1":40, "con2":20, "con3":99, "con4":40, "password":"1234"}
-data = json.dumps(conditions).encode('utf-8')
-request = Request(url, data=data, headers={'content-type': 'application/json'})
-# end of POST
-response = httpopen(request)
-print('content:')
-print(response.content)
-if response.headers.get('content-type') == 'application/json':
-    text = json.loads(response.content.decode('utf-8'))
-    print('decoded json contents:')
-    print(text)
+    # Test POST method with JSON data
+    import json
+    url = 'http://httpbin.org/post'     # simple HTTP Request & Response Service.
+    conditions =  {"con1":40, "con2":20, "con3":99, "con4":40, "password":"1234"}
+    data = json.dumps(conditions).encode('utf-8')
+    request = Request(url, data=data, headers={'content-type': 'application/json'})
+    # end of POST
+    response = httpopen(request)
+    print('content:')
+    print(response.content)
+    if response.headers.get('content-type') == 'application/json':
+        text = json.loads(response.content.decode('utf-8'))
+        print('decoded json contents:')
+        print(text)

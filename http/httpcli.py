@@ -15,20 +15,20 @@ class Response:
 class Request:
     template = '{method} {path} HTTP/1.1\r\n{headers}\r\n'
 
-    def __init__(self, url, data=None, headers=None):
-        self.method = 'POST' if data else 'GET'
-        self.full_url = url
+    def __init__(self, method, url, data=None, headers=None):
+        self.method = method
+        self.url = url
         self.data = data
         self.headers = CaseInsensitiveDict()
 
-        r = urlparse(self.full_url)
+        r = urlparse(self.url)
         self.path = r.path if r.path else '/'
         if r.params:
             self.path += ';' + r.params
         if r.query:
             self.path += '?' + r.query
         self.headers['Host'] = r.hostname
-        self.headers['Agent'] = 'httpopen'
+        self.headers['Agent'] = 'httpcli'
         self.headers['Accept'] = '*/*'
         self.headers['Connection'] = 'close'
         if headers:
@@ -44,14 +44,22 @@ class Request:
         self.message = self.template.format(method=self.method, path=self.path, headers=headers_str)
 
 
-def httpopen(url, data=None, headers=None):
-    """Send an HTTP request and receive its response.
+def get(url, params=None):
+    """Send an HTTP GET request and receive its response.
 
     :param url: URL for the new :class: Request object
-    :param data: data to send in the body of the Request
-    :param headers: dict type for setting headers
+    :param params: (optional) Dictionary or bytes to be sent in the query string for the :class:`Request`.
     """
 
+
+    request = Request('GET', url, data, headers)
+    return httpopen(request)
+
+def post(url, data=None, headers=None):
+    request = Request('POST', url, data, headers)
+    return httpopen(request)
+
+def httpopen(request):
     def read_headers(file, headers):
         for line in file:
             if line == b'\r\n':  # end of headers
@@ -60,8 +68,7 @@ def httpopen(url, data=None, headers=None):
             key, value = header.split(':', maxsplit=1)
             headers[key] = value.strip()
 
-    request = Request(url, data, headers)
-    r = urlparse(request.full_url)
+    r = urlparse(request.url)
     if r.scheme != 'http':
         raise NotImplementedError('{}: not implemented'.format(r.scheme))
     logging.debug('Request message:\n{}'.format(request.message))
@@ -113,18 +120,26 @@ def httpopen(url, data=None, headers=None):
 if __name__ == '__main__':
     # GET method - chunked transfer
     url = 'http://mclab.hufs.ac.kr/wiki/Lectures/IA/2019#Python_Network_Programming'
-    response = httpopen(url)
+    response = get(url)
     print('content:')
     print(response.content[:400])
 
     # Test POST method with JSON data
     import json
     url = 'http://httpbin.org/post'     # simple HTTP Request & Response Service.
-    conditions =  {"con1":40, "con2":20, "con3":99, "con4":40, "password":"1234"}
-    data = json.dumps(conditions).encode('utf-8')
-    request = Request(url, data=data, headers={'content-type': 'application/json'})
+    sensor_data = {
+        "deviceid": "iot123",
+        "temp": 54.98,
+        "humidity": 32.43,
+        "coords": {
+            "latitude": 47.615694,
+            "longitude": -122.3359976,
+        },
+        "orgnaization": "한국외대"
+    }
+    data = json.dumps(sensor_data).encode('utf-8')
+    response = post(url, data=data, headers={'content-type': 'application/json'})
     # end of POST
-    response = httpopen(request)
     print('content:')
     print(response.content)
     if response.headers.get('content-type') == 'application/json':

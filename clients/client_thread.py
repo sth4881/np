@@ -7,7 +7,7 @@ recv_bytes = []
 def recv_loop(sock):
     print('recv thread started')
     while True:
-        data = sock.recv(3000)     # receive response
+        data = sock.recv(2048)     # receive response
         if not data:
             print('Server closing')
             break

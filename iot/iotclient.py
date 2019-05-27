@@ -1,58 +1,64 @@
 """
 We may define IoT Protocol messages as Python dicts.
 They are serialized as JSON format string, then encoded in utf-8.
-Because every messages are delimeted by new line character (b'\n') in a TCP session,
+Because every messages are delimited by new line character (b'\n') in a TCP session,
 avoid using LF character inside Python strings.
 
-The POLL request messages are sent periodically
-for server to inform the client to activate actuators if needed.
+The POST request messages might be sent periodically
+for server to inform the client to activate the actuators if needed.
 
-<request message> ::= <POST request message> | <POLL request message>
-<response message> ::= <POST response message> | <POLL response message>
-
-<POST request message> ::=
+<request message> ::=
     {   'method': 'POST',
         'deviceid': <device id>,
-        'data': <sensor data>
+        'msgid': <messge id>,
+        'data': {'temperature': 28.5, 'humidity': 71},
     } <LF>
 
-<POST response message> ::=
-    {   'status': 'OK' | 'ERROR <error msg>',
-        'deviceid': <device id>
-    } <LF>
-
-<POLL request message> ::=
-    {   'method': 'POLL',
-        'deviceid': <device id>
-    } <LF>
-
-<POLL response message>:
+<response message with activate>:
     {   'status': 'OK' | 'DO' | 'ERROR <error msg>',
         'deviceid': <device id>
-        'activate': {
-                        'aircon': 'ON',
-                        'led': 'OFF',
-                        ...
-                    }
+        'msgid': <messge id>
+      [ 'activate': {'aircon': 'ON', 'led': 'OFF' } ]
     } <LF>
 """
 
-import socket, json, time, random, sys
+import socket, json, time, sys
 import selectors, uuid
+import random, math
+import logging
 
-def read_sensors():
-    """
-    Read from sensors
 
-    :param interval: sensing interval in seconds
-    :return: dict containing sensors' data
+def gen_data(mean, deviation, samples=100):
+    """Simulate reading sensor's data, adding noise to sine curve.
+
+    :param mean: mean of sine curve
+    :param deviation: deviation of sine curve
+    :param samples: total number of samples to be generated
+    :return: sensor data (float)
     """
 
     # Get values from the sensors
-    temperature = random.randint(15, 40)
-    humidity = random.randint(30, 90)
-    data = {'temperature': temperature, 'humidity': humidity}
-    return data
+    Fs = samples
+    f = 1
+    for t in range(samples):
+        signal = deviation * math.sin(2 * math.pi * f * t / Fs) + mean
+        noise = random.gauss(mu=deviation / 4, sigma=deviation / 4)
+        measured = signal + noise
+        yield measured
+
+def ewma(generator, alpha=0.25):
+    """Exponential weighted moving average
+
+    :param generator: iterables including touples, lists, and generators
+    :return: smoothed data
+    """
+    s = None
+    for y in generator:
+        if s:
+            s = alpha*y + (1-alpha)*s
+        else:
+            s = y
+        yield s
 
 class IoTClient:
     def __init__(self, server_addr, deviceid):
@@ -95,14 +101,25 @@ class IoTClient:
 
     def run(self):
         # Report sensors' data forever
-        try:
-            while True:
-                events = self.select_periodic(interval=0.001)
+        gen_temp = ewma(gen_data(mean=20, deviation=20, samples=20))
+        gen_humid = ewma(gen_data(mean=50, deviation=15, samples=20))
+        msgid = 0
+
+        while True:
+            try:
+                events = self.select_periodic(interval=5)
                 if not events:      # timeout occurs
-                    data = read_sensors()
-                    msgid = str(uuid.uuid1())
+                    try:
+                        temperature = next(gen_temp)
+                        humidity = next(gen_humid)
+                    except StopIteration:
+                        logging.info('No more sensor data to send')
+                        break
+                    data = dict(temperature=temperature, humidity=humidity)
+                    # msgid = str(uuid.uuid1())
+                    msgid += 1
                     request = dict(method='POST', deviceid=self.deviceid, msgid=msgid, data=data)
-                    print(time.time(), request)
+                    logging.debug(request)
                     request_bytes = json.dumps(request).encode('utf-8') + b'\n'
                     self.sock.sendall(request_bytes)
                     self.requests[msgid] = request_bytes
@@ -112,24 +129,32 @@ class IoTClient:
                         self.sock.close()
                         raise OSError('Server abnormally terminated')
                     response = json.loads(response_bytes.decode('utf-8'))
-                    print(response)
+                    logging.debug(response)
                     msgid = response.get('msgid')
                     if msgid and msgid in self.requests:
                         del self.requests[msgid]
                     else:
-                        print('{}: illegal msgid received. Ignored'.format(msgid))
-        except Exception as e:
-            print('{}: client terminated'.format(e))
-        finally:
-            self.sock.close()
+                        logging.warning('{}: illegal msgid received. Ignored'.format(msgid))
+            except (ValueError, OSError) as e:
+                logging.error(e)
+                break
+            except Exception as e:
+                logging.error(e)
+                break
+
+        logging.info('client terminated')
+        self.sock.close()
 
 if __name__ == '__main__':
-    # if len(sys.argv) == 3:
-    #     host, port = sys.argv[1].split(':')
-    #     deviceid = sys.argv[2]
-    # else:
-    #     print('Usage: {} host:port iot_id '.format(sys.argv[0]))
-    #     sys.exit(1)
+    if len(sys.argv) == 3:
+        host, port = sys.argv[1].split(':')
+        port = int(port)
+        deviceid = sys.argv[2]
+    else:
+        print('Usage: {} host:port iot_id '.format(sys.argv[0]))
+        sys.exit(1)
 
-    client = IoTClient(('np.hufs.ac.kr', 7), deviceid=100)
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s:%(levelname)s:%(message)s')
+    client = IoTClient((host, port), deviceid)
     client.run()

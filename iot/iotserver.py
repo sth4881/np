@@ -25,7 +25,7 @@ class IoTRequestHandler(socketserver.StreamRequestHandler):
                 status = 'OK'
                 logging.debug("{}:{}".format(client, request))
 
-            # get the sensor data from the request
+            # extract the sensor data from the request
             data = request.get('data')
             if data:        # data exists
                 temperature = float(data.get('temperature'))

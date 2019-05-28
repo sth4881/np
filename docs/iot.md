@@ -1,5 +1,5 @@
 
-# Socket communications for IoT
+# Client/server for IoT - an example code
 ## 측정한 signal의 값은 noise를 포함한다.
 Sensor로 읽은 값은 noise가 포함되어 있기 때문에 변화가 있고, 실제 값을 추정하기가 곤란하다. 
 
@@ -114,10 +114,7 @@ while True:
 def ewma(generator, alpha=0.25):
     s = None
     for y in generator:
-        if s:
-            s = alpha*y + (1-alpha)*s
-        else:
-            s = y
+        s = alpha*y + (1-alpha)*s if s else y
         yield s
 
 gen_temp = gen_data(mean=20, deviation=20, samples=10)
@@ -128,8 +125,8 @@ print(smooth_temp_data)
 print(smooth_humid_data)
 ```
 
-    [25.146203095067566, 29.935993300522576, 34.77612243333718, 33.92824885561752, 33.65679499992107, 29.52831084524808, 24.05135660122431, 20.700211032260405, 20.62110960364492, 17.623912740642325]
-    [49.46403315882795, 53.873641725940104, 56.08950472963947, 60.65354514289841, 59.0649013372132, 59.21592622065003, 55.69960238179461, 50.94496404981478, 47.414879665111854, 47.67135028628219]
+    [28.397333590150126, 32.260860203915186, 36.036054335492345, 37.376288234798565, 38.64413957241087, 33.346052497730476, 29.900287067526214, 26.200902630008272, 21.84309376618903, 20.92107091315581]
+    [55.19981327553353, 57.251512245564996, 59.01794969088044, 59.72938368094343, 61.07442036256563, 59.784393078251505, 55.10695864329847, 50.392558608020444, 48.58954039365753, 48.78366800916015]
     
 
 
@@ -144,3 +141,53 @@ plt.show()
 
 ![png](output_7_0.png)
 
+
+## IOT request/response message - an example
+```
+<request message> ::= <request object in JSON format with UTF-8 encoding> <LF>
+
+<request object> ::=
+    {   'method': 'POST',
+        'deviceid': <device id>,
+        'msgid': <messge id>,
+        'data': {'temperature': 28.5, 'humidity': 71},
+    }
+
+<response message> ::= <response object in JSON format with UTF-8 encoding> <LF>
+
+<response object> ::=
+    {   'status': 'OK' | 'ERROR <error msg>',
+        'deviceid': <device id>
+        'msgid': <messge id>
+      [ 'activate': {'aircon': 'ON', 'led': 'OFF' } ]  # optional
+    }
+
+<LF> ::= b'\n'
+```
+
+## iot/iotclient.py:
+Sensor data는 주기적으로 읽는 것으로 가정한다. 즉, 지정된 interval 마다 sensor에서 값을 읽고 request message에 data field에 삽입해 송신한다. Response message 도착했다는 event와 함께 timeout event를 처리하기
+적절한 방법이 I/O multiplexing 기법이다.
+`select(timeout=interval)`은 timeout 이내에 `EVENT_READ`가 발생하거나, 아니면 timeout이 발생한다.
+따라서, event가 발생한 후에 interval 만큼 대기하기 때문에 지정한 주기마다 timeout이 발생하지 않고 delay될 수 있다. 
+
+`select_perioic(interval)` method는 정확히 interval 마다, timeout을 발생시키도록 설계된 것으로, 
+event가 발생했을 때 남은 시간을 계산하여 timeout을 변경한다.
+
+Request message에 `msgid`가 정의되어 있고, server는 어떤 request에 대한 response인지 `msgid`를 삽입하여
+회신하기 때문에, request 송신과 response 수신을 asynchronous하게 처리할 수 있다. Pipeling이 가능하다.
+
+Usage: 
+```bash
+python iotclient.py host:port deviceid
+```
+
+## iot/iotserver.py:
+`socketserver` 모듈의 `ThreadingTCPServer`를 이용하여, request handler의 `handle` method만 implementation한 예다.
+
+매 request message마다 다음 순서로 처리한다.
+1. get a request message in JSON and converts into dict
+2. Extract the sensor data from the request
+3. Insert sensor data into DB table and retrieve information to control the actuators
+4. Apply rules to control actuators
+5. Reply resonse message

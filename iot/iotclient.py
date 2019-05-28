@@ -19,7 +19,7 @@ for server to inform the client to activate the actuators if needed.
 <response message> ::= <response object in JSON format with UTF-8 encoding> <LF>
 
 <response object> ::=
-    {   'status': 'OK' | 'DO' | 'ERROR <error msg>',
+    {   'status': 'OK' | 'ERROR <error msg>',
         'deviceid': <device id>
         'msgid': <messge id>
       [ 'activate': {'aircon': 'ON', 'led': 'OFF' } ]  # optional
@@ -33,34 +33,36 @@ import selectors, uuid
 import random, math
 import logging
 
-def gen_data(mean, deviation, samples=100):
+def gen_data(mean, deviation, samples=None, ewma=True, alpha=0.25):
     """Simulate reading sensor's data, adding noise to sine curve.
 
     :param mean: mean of sine curve
     :param deviation: deviation of sine curve
     :param samples: total number of samples to be generated
-    :return: sensor data (float)
+                    generates infinite samples if samples is None (default)
+    :param ewma: smooth measured samples if True
+                 returns raw measured samples, otherwise
+    :param alpha: parameter for ewma
+    :return: sensor data (float type)
     """
 
     # Get values from the sensors
-    Fs = samples
+    Fs = samples if samples else 100
     f = 1
-    for t in range(samples):
+    s = None
+    t = 0
+    while True:
+        t += 1
+        if samples and samples < t:
+            raise StopIteration     # to terminate while loop
         signal = deviation * math.sin(2 * math.pi * f * t / Fs) + mean
         noise = random.gauss(mu=deviation / 4, sigma=deviation / 4)
         measured = signal + noise
-        yield measured
-
-def ewma(generator, alpha=0.25):
-    """Exponential weighted moving average
-
-    :param generator: iterables including touples, lists, and generators
-    :return: smoothed data
-    """
-    s = None
-    for y in generator:
-        s = alpha*y + (1-alpha)*s if s else y
-        yield s
+        if ewma:
+            s = alpha * measured + (1 - alpha) * s if s else measured
+            yield s
+        else:
+            yield measured
 
 class IoTClient:
     def __init__(self, server_addr, deviceid):
@@ -103,8 +105,8 @@ class IoTClient:
 
     def run(self):
         # Report sensors' data forever
-        gen_temp = ewma(gen_data(mean=20, deviation=20, samples=20))
-        gen_humid = ewma(gen_data(mean=50, deviation=15, samples=20))
+        gen_temp = gen_data(mean=20, deviation=20, samples=20)
+        gen_humid = gen_data(mean=50, deviation=15, samples=20)
         msgid = 0
 
         while True:
@@ -132,6 +134,9 @@ class IoTClient:
                         raise OSError('Server abnormally terminated')
                     response = json.loads(response_bytes.decode('utf-8'))
                     logging.debug(response)
+
+                    # msgid in response allows to identify the specific request message
+                    # It enables asynchronous transmission of request messages in pipelining
                     msgid = response.get('msgid')
                     if msgid and msgid in self.requests:
                         del self.requests[msgid]
@@ -143,6 +148,7 @@ class IoTClient:
             except Exception as e:
                 logging.error(e)
                 break
+        # end of while loop
 
         logging.info('client terminated')
         self.sock.close()
@@ -153,7 +159,7 @@ if __name__ == '__main__':
         port = int(port)
         deviceid = sys.argv[2]
     else:
-        print('Usage: {} host:port iot_id '.format(sys.argv[0]))
+        print('Usage: {} host:port deviceid'.format(sys.argv[0]))
         sys.exit(1)
 
     logging.basicConfig(level=logging.DEBUG,

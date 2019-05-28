@@ -54,7 +54,7 @@ def gen_data(mean, deviation, samples=None, ewma=True, alpha=0.25):
     while True:
         t += 1
         if samples and samples < t:
-            raise StopIteration     # to terminate while loop
+            break     # to terminate while loop
         signal = deviation * math.sin(2 * math.pi * f * t / Fs) + mean
         noise = random.gauss(mu=deviation / 4, sigma=deviation / 4)
         measured = signal + noise
@@ -105,8 +105,8 @@ class IoTClient:
 
     def run(self):
         # Report sensors' data forever
-        gen_temp = gen_data(mean=20, deviation=20, samples=20)
-        gen_humid = gen_data(mean=50, deviation=15, samples=20)
+        gen_temp = gen_data(mean=20, deviation=20, samples=10)
+        gen_humid = gen_data(mean=50, deviation=15, samples=10)
         msgid = 0
 
         while True:
@@ -142,9 +142,6 @@ class IoTClient:
                         del self.requests[msgid]
                     else:
                         logging.warning('{}: illegal msgid received. Ignored'.format(msgid))
-            except (ValueError, OSError) as e:
-                logging.error(e)
-                break
             except Exception as e:
                 logging.error(e)
                 break

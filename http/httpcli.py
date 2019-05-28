@@ -73,7 +73,7 @@ class Request:
                                 path=self.path, headers=headers_str)
         logging.debug('Request message:\n{}'.format(message))
         file.write(message.encode('utf-8'))
-        if self.data:    # utf-8 encoded
+        if self.data:
             file.write(self.data.encode('utf-8'))
         file.flush()
 

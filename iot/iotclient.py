@@ -1,32 +1,37 @@
 """
-We may define IoT Protocol messages as Python dicts.
+We define IoT Protocol messages as Python dicts for example.
 They are serialized as JSON format string, then encoded in utf-8.
-Because every messages are delimited by new line character (b'\n') in a TCP session,
+Caution: because every messages are delimited by new line character (b'\n') in a TCP session,
 avoid using LF character inside Python strings.
 
-The POST request messages might be sent periodically
+The POST request messages may be sent periodically
 for server to inform the client to activate the actuators if needed.
 
-<request message> ::=
+<request message> ::= <request object in JSON format with UTF-8 encoding> <LF>
+
+<request object> ::=
     {   'method': 'POST',
         'deviceid': <device id>,
         'msgid': <messge id>,
         'data': {'temperature': 28.5, 'humidity': 71},
-    } <LF>
+    }
 
-<response message with activate>:
+<response message> ::= <response object in JSON format with UTF-8 encoding> <LF>
+
+<response object> ::=
     {   'status': 'OK' | 'DO' | 'ERROR <error msg>',
         'deviceid': <device id>
         'msgid': <messge id>
-      [ 'activate': {'aircon': 'ON', 'led': 'OFF' } ]
-    } <LF>
+      [ 'activate': {'aircon': 'ON', 'led': 'OFF' } ]  # optional
+    }
+
+<LF> ::= b'\n'
 """
 
 import socket, json, time, sys
 import selectors, uuid
 import random, math
 import logging
-
 
 def gen_data(mean, deviation, samples=100):
     """Simulate reading sensor's data, adding noise to sine curve.
@@ -54,10 +59,7 @@ def ewma(generator, alpha=0.25):
     """
     s = None
     for y in generator:
-        if s:
-            s = alpha*y + (1-alpha)*s
-        else:
-            s = y
+        s = alpha*y + (1-alpha)*s if s else y
         yield s
 
 class IoTClient:

@@ -113,8 +113,12 @@ class IoTClient:
             try:
                 events = self.select_periodic(interval=5)
                 if not events:      # timeout occurs
-                    temperature = next(gen_temp)
-                    humidity = next(gen_humid)
+                    try:
+                        temperature = next(gen_temp)
+                        humidity = next(gen_humid)
+                    except StopIteration:
+                        logging.info('No more sensor data to send')
+                        break
                     data = dict(temperature=temperature, humidity=humidity)
                     # msgid = str(uuid.uuid1())
                     msgid += 1
@@ -138,8 +142,11 @@ class IoTClient:
                         del self.requests[msgid]
                     else:
                         logging.warning('{}: illegal msgid received. Ignored'.format(msgid))
-            except StopIteration:
-                logging.info('No more sensor data to send')
+            except (ValueError, OSError) as e:
+                logging.error(e)
+                break
+            except Exception as e:
+                logging.error(e)
                 break
         # end of while loop
 

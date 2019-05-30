@@ -1,10 +1,10 @@
 # Network Programming
 
-## intro
+## intro/
 - echocli.py
 - echoserv.py
 
-## clients
+## clients/
 - client_wrong.py: incorrect version
 - client_shutdown.py: receive more data after shutdown
 - client_makefile.py: converting socket to file-like object
@@ -15,8 +15,15 @@
 python clients.py [<n>]   # run n(=3, default) clients
 ```
 
-## servers
+## servers/
 - server_select.py: I/O multiplexing
 - server_thread.py: multi-threading
 - server.py: OO approach with multi-threading
 - server_socketserver: using socketserver module
+
+## iot/
+- iotclient.py: an IoT client example
+- iotserver.py: an IoT server example
+
+## http/
+- httpcli.py: http client using socket
